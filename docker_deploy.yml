@@ -1,0 +1,40 @@
+---
+- name: Configure Docker and Deploy WebServer
+  hosts: Managed_Node
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Pull Apache Docker image
+      docker_image:
+        name: httpd
+        source: pull
+
+    - name: Create Docker network
+      docker_network:
+        name: apache_network
+        driver: bridge
+        ipam_config:
+          - subnet: "172.168.10.0/30"
+
+    - name: Run Apache Docker container
+      docker_container:
+        name: apache_container
+        image: httpd
+        state: started
+        restart_policy: always
+        ports:
+          - "80:80"
+        networks:
+          - name: apache_network
